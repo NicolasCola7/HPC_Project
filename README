@@ -1,0 +1,45 @@
+Questo archivio contiene il materiale per il progetto del corso di
+Calcolo Parallelo, laurea magistrale in Informatica, Università di
+Bologna, AA 2025/2026.
+
+Il file `README` (questo file) dovrà includere le istruzioni per la
+compilazione e l'esecuzione dei programmi consegnati; per comodità,
+nella directory `src/` è presente un Makefile per compilare il codice
+fornito. Chi lo desidera può modificarlo per compilare i programmi
+consegnati, oppure non usarlo ed effettuare la compilazione
+manualmente. In tal caso specificare in questo file i comandi
+necessari per la compilazione.
+
+Per quanto riguarda la versione seriale presente in questo archivio, è
+possibile usare i comandi seguenti. Entrare innanzitutto nella
+directory `src/`
+
+        cd src/
+
+Compilare con:
+
+        gcc -std=c99 -Wall -Wpedantic -O2 correlogram.c -o correlogram
+        gcc -std=c99 -Wall -Wpedantic gen.c -o gen
+
+Per riprodurre il grafico mostrato nel documento delle specifiche,
+generare un input con un milione di valori usando, ad esempio, due
+segnali sinusoidali:
+
+        ./gen 2 1000000 data1M
+
+Questo comando genera due file, `data1M_clean.txt` contenente i
+segnali sinusoidali, e `data1M_noisy.txt` contenente gli stessi
+segnali con l'aggiunta di rumore casuale. Calcolare il correlogramma:
+
+        ./correlogram data1M_noisy.txt out1M.txt 2048
+
+Generare il grafico tramite `gnuplot`, usando lo script `plot.gp`
+fornito:
+
+        gnuplot plot.gp
+
+Il risultato sarà nel file `out1M.png` in formato png.
+
+I comandi sopra possono essere eseguiti in automatico usando il
+Makefile allegato, dando semplicemente il comando `make test` dalla
+directory `src/`.
