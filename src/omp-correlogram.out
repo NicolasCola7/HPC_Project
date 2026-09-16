@@ -1,0 +1,5 @@
+=== Compiling ===
+=== Running OpenMP program with 4 threads ===
+Execution time 1.000
+/var/spool/slurmd/job68880/slurm_script: line 39: gnuplot: command not found
+=== End of Job ===

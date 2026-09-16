@@ -1,38 +1,11 @@
-/****************************************************************************
- *
- * correlogram.c - Compute the correlogram of a time series
- *
- * Copyright (C) 2026 Moreno Marzolla
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * --------------------------------------------------------------------------
- *
- * Compile with:
- *
- * gcc -std=c99 -Wall -Wpedantic correlogram.c -o correlogram
- *
- * Execute with:
- *
- * ./correlogram input [output [maxshifts]]
- *
- ****************************************************************************/
+// Nicolas Cola
+// 0001235951
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
+#include "hpc.h"
 
 float *X = NULL;   /* (array of `nvalues` elements). */
 int nvalues = 0;
@@ -77,36 +50,33 @@ void autocorrelate( void )
     /* Compute the mean. */
     float mean = 0.0f;
 
-    # pragma omp parallel for reduction(+ : mean) {
-        for (int i=0; i<nvalues; i++) {
-            mean += X[i];
-        }
+    # pragma omp parallel for reduction(+ : mean)
+    for (int i=0; i<nvalues; i++) {
+        mean += X[i];
     }
+    
     mean /= nvalues;
 
     /* Compute the variance. */
     float var = 0.0f;
-    # pragma omp parallel for reduction(+ : var) {
-        for (int i=0; i<nvalues; i++) {
-            var += (X[i] - mean)*(X[i] - mean) / nvalues;
-        }
+    
+    # pragma omp parallel for reduction(+ : var) 
+    for (int i=0; i<nvalues; i++) {
+        var += (X[i] - mean)*(X[i] - mean) / nvalues;
     }
 
-    # pragma omp parallel {
+    # pragma omp parallel for
         /* Compute the lag-h autocorrelation. */
         for (int h=0; h<maxshifts; h++) {
-            float ac = 0.0f; /* autocovariance */
+	    float ac = 0.0f; /* autocovariance */
 
-            # pragma omp for reduction(+ : ac) {
-                for (int i=0; i < nvalues; i++) {
-                    ac += (X[i] - mean)*(X[(i+h)%nvalues] - mean) / nvalues;
-                }
+            for (int i=0; i < nvalues; i++) {
+                ac += (X[i] - mean)*(X[(i+h)%nvalues] - mean) / nvalues;
             }
-            
+
             coef[h] = ac / var;
         }
-    }
-    
+
 }
 
 
@@ -150,7 +120,11 @@ int main( int argc, char *argv[] )
     }
 
     read_signal(inputf);
+    float start = hpc_gettime();
     autocorrelate();
+    float end = hpc_gettime();
+    float elapsed = end - start;
+    printf("Execution time %.3f\n", elapsed);
     store(outputf);
 
     fclose(inputf);

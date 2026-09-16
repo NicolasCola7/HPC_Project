@@ -20,7 +20,6 @@
 ##      scancel <jobid>
 ##
 ## Last modified in 2026-02-17 by Moreno Marzolla.
-
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task 4
@@ -31,9 +30,11 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 echo "=== Compiling ==="
-gcc -std=c99 -Wall -Wpedantic -fopenmp omp-correlogram.c -o omp-correlogram
+gcc -O2 -std=c99 -Wall -Wpedantic gen.c -o gen -lm
+gcc -O2 -std=c99 -Wall -Wpedantic -fopenmp omp-correlogram.c -o omp-correlogram
 
 echo "=== Running OpenMP program with $OMP_NUM_THREADS threads ==="
-./omp-correlogram
+./gen 2 1000000 data1M
+./omp-correlogram data1M_noisy.txt out1M.txt 2048
 
 echo "=== End of Job ==="
