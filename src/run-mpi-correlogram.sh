@@ -1,5 +1,5 @@
 #!/bin/bash
-# run-mpi-program.sh
+# run-mpi-correlogram.sh
 
 #SBATCH -n 4
 #SBATCH --time=0-00:05:00
