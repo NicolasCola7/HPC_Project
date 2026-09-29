@@ -37,6 +37,12 @@ void read_signal(FILE *f)
 
 void autocorrelate( void )
 {
+    /* 
+    Mean and variance are computed redundantly by all processes.
+    This is because they are O(n) computations and the overhead of
+    distributing the data and collecting the results would be
+    higher than the cost of computing them redundantly.
+    */
     float mean = 0.0f;
     for (int i=0; i<nvalues; i++) {
         mean += X[i];
@@ -48,25 +54,40 @@ void autocorrelate( void )
         var += (X[i] - mean)*(X[i] - mean) / nvalues;
     }
 
-    int *recvcnts = (int*)malloc( comm_sz * sizeof(*recvcnts) );
-    int *displs = (int*)malloc( comm_sz * sizeof(*displs) );
+    int *recvcnts = NULL;
+    int *displs = NULL;
+
+    /*
+    Only the root process computes the displacements and counts for the MPI_Gatherv call.
+    This is because the displacements and counts are only needed by the root process to gather the 
+    results from all processes. The other processes do not need this information.
+    */
+    if (my_rank == 0) {
+        recvcnts = (int*)malloc( comm_sz * sizeof(*recvcnts) );
+        displs = (int*)malloc( comm_sz * sizeof(*displs) );
    
-    for (int i = 0; i < comm_sz; i++) {
-        int start = (maxshifts * i) / comm_sz;
-        int end = (maxshifts * (i + 1)) / comm_sz;
-        recvcnts[i] = end - start;
-        displs[i] = start;
-    }
+        for (int i = 0; i < comm_sz; i++) {
+            int start = (maxshifts * i) / comm_sz;
+            int end = (maxshifts * (i + 1)) / comm_sz;
+            recvcnts[i] = end - start;
+            displs[i] = start;
+        }
 
-    const int local_start = displs[my_rank];
-    const int local_end = displs[my_rank] + recvcnts[my_rank];
-
-    if(my_rank == 0) {
         coef = (float*)malloc(maxshifts * sizeof(*coef));
         assert(coef != NULL);
     }
+    
+    /*
+    Compute start index, end index and  maxshifts for each process
+    in order to partition the outer loop.
+    By doing so, maxshifts doesn't need to be divisible by comm_sz,
+    ensuring load balancing among processes.
+    */
+    const int local_start = (maxshifts * my_rank) / comm_sz;
+    const int local_end = (maxshifts * (my_rank + 1)) / comm_sz;
+    const int local_maxshifts  = local_end - local_start;
 
-    float *local_coef = (float*)malloc(recvcnts[my_rank] * sizeof(*local_coef));
+    float *local_coef = (float*)malloc(local_maxshifts * sizeof(*local_coef));
     assert(local_coef != NULL);
 
     for (int h=local_start; h<local_end; h++) {
@@ -77,7 +98,7 @@ void autocorrelate( void )
         local_coef[h - local_start] = ac / var;
     }
 
-    MPI_Gatherv(local_coef, recvcnts[my_rank], MPI_FLOAT,
+    MPI_Gatherv(local_coef, local_maxshifts, MPI_FLOAT,
                 coef, recvcnts, displs, MPI_FLOAT,
                 0, MPI_COMM_WORLD);
                 
@@ -130,7 +151,7 @@ int main( int argc, char *argv[] )
         read_signal(inputf);
         fclose(inputf);
     }
-    
+
     const double start = MPI_Wtime();
     MPI_Bcast(&nvalues, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -143,14 +164,13 @@ int main( int argc, char *argv[] )
     autocorrelate();
     const double elapsed = MPI_Wtime() - start;
     if (my_rank == 0) {
-	printf("Execution time %.3f\n", elapsed);
+	    printf("%.3f\n", elapsed);
         store(outputf);
         fclose(outputf);
         free(coef);
     }
 
     free(X);
-    
     MPI_Finalize();
     return EXIT_SUCCESS;
 }

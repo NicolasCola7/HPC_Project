@@ -68,7 +68,7 @@ void autocorrelate( void )
     # pragma omp parallel for
         /* Compute the lag-h autocorrelation. */
         for (int h=0; h<maxshifts; h++) {
-	    float ac = 0.0f; /* autocovariance */
+	        float ac = 0.0f; /* autocovariance */
 
             for (int i=0; i < nvalues; i++) {
                 ac += (X[i] - mean)*(X[(i+h)%nvalues] - mean) / nvalues;
@@ -76,7 +76,6 @@ void autocorrelate( void )
 
             coef[h] = ac / var;
         }
-
 }
 
 
@@ -120,11 +119,10 @@ int main( int argc, char *argv[] )
     }
 
     read_signal(inputf);
-    float start = hpc_gettime();
+    double start = omp_get_wtime();
     autocorrelate();
-    float end = hpc_gettime();
-    float elapsed = end - start;
-    printf("Execution time %.3f\n", elapsed);
+    double elapsed = omp_get_wtime() - start;
+    printf("%.3f\n", elapsed);
     store(outputf);
 
     fclose(inputf);
