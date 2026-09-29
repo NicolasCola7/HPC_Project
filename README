@@ -18,7 +18,7 @@ directory `src/`
 
 Compilare con:
 
-        gcc -std=c99 -Wall -Wpedantic -O2 correlogram.c -o correlogram
+        gcc -std=c99 -Wall -Wpedantic -O2 serial-correlogram.c -o serial-correlogram
         gcc -std=c99 -Wall -Wpedantic gen.c -o gen
 
 Per riprodurre il grafico mostrato nel documento delle specifiche,
@@ -31,7 +31,7 @@ Questo comando genera due file, `data1M_clean.txt` contenente i
 segnali sinusoidali, e `data1M_noisy.txt` contenente gli stessi
 segnali con l'aggiunta di rumore casuale. Calcolare il correlogramma:
 
-        ./correlogram data1M_noisy.txt out1M.txt 2048
+        ./serial-correlogram data1M_noisy.txt out1M.txt 2048
 
 Generare il grafico tramite `gnuplot`, usando lo script `plot.gp`
 fornito:
