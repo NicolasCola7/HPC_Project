@@ -1,24 +1,7 @@
 #!/bin/bash
 
 ## run-omp-correlogram.sh
-##
-## This script can be used to submit an OpenMP program to the DISI HPC
-## cluster using the Slurm job scheduler.
-##
-## To submit a job:
-##      sbatch run-omp-correlogram.sh
-##
-## To submit a job specifying the number of threads
-## (bypassws the default value specified by --cpus-per-task)
-##
-##      sbatch -c 2 run-omp-correlogram.sh
-##
-## To check the queue:
-##      squeue
-##
-## To cancel a job:
-##      scancel <jobid>
-##
+
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task 4
